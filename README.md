@@ -53,6 +53,10 @@ The PartyPeople project does not currently build. Can you help figure out why, a
 
 A bug has been reported that updating events is not working as expected. Can you help by debugging the functionality and resolving the issue?
 
+### Answer 2 
+The WHERE clause was missing from the SQL meaning that if you update one Event the update will overide every other event in the database table. 
+
+
 ### Task 3
 
 Koderly would like to track which employees are attending which events. Can you extend the PartyPeople application to add this functionality?

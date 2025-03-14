@@ -183,37 +183,53 @@ public class EventRepository : RepositoryBase
     /// </summary>
     /// <param name="event">The updated event details. The <see cref="Event.Id"/> should be the Id of the event to update.</param>
     /// <returns>An awaitable task that results in the updated event.</returns>
-    public async Task<Event> UpdateAsync(Event @event, CancellationToken cancellationToken = default)
-    {
-        var command = new CommandDefinition(
-            @"
-                UPDATE  [Event]
-                SET     [Description] = @Description,
-                        [StartDateTime] = @StartDateTime,
-                        [EndDateTime] = @EndDateTime,
-                        [MaximumCapacity] = @MaximumCapacity;
+public async Task<Event> UpdateAsync(Event @event, CancellationToken cancellationToken = default)
+{
+    // First: update the event
+    var updateCommand = new CommandDefinition(
+        @"
+        UPDATE [Event]
+        SET [Description] = @Description,
+            [StartDateTime] = @StartDateTime,
+            [EndDateTime] = @EndDateTime,
+            [MaximumCapacity] = @MaximumCapacity
+        WHERE [Id] = @Id;
+        ",
+        parameters: new
+        {
+            @event.Description,
+            @event.StartDateTime,
+            @event.EndDateTime,
+            @event.MaximumCapacity,
+            @event.Id
+        },
+        commandType: CommandType.Text,
+        cancellationToken: cancellationToken
+    );
 
-                SELECT  [E].[Id],
-                        [E].[Description],
-                        [E].[StartDateTime],
-                        [E].[EndDateTime],
-                        [E].[MaximumCapacity]
-                FROM    [Event] AS [E];
-            ",
-            parameters: new
-            {
-                @event.Description,
-                @event.StartDateTime,
-                @event.EndDateTime,
-                @event.MaximumCapacity
-            },
-            commandType: CommandType.Text,
-            cancellationToken: cancellationToken);
+    await Connection.ExecuteAsync(updateCommand);
 
-        var updatedEvent = await Connection.QuerySingleAsync<Event>(command);
+    // Second: return the updated event
+    var selectCommand = new CommandDefinition(
+        @"
+        SELECT [Id],
+               [Description],
+               [StartDateTime],
+               [EndDateTime],
+               [MaximumCapacity]
+        FROM [Event]
+        WHERE [Id] = @Id;
+        ",
+        parameters: new { @event.Id },
+        commandType: CommandType.Text,
+        cancellationToken: cancellationToken
+    );
 
-        return updatedEvent;
-    }
+    var updatedEvent = await Connection.QuerySingleAsync<Event>(selectCommand);
+
+    return updatedEvent;
+}
+
 
     /// <summary>
     /// Deletes an existing event.
@@ -236,4 +252,42 @@ public class EventRepository : RepositoryBase
 
         await Connection.ExecuteAsync(command);
     }
+
+    public async ValueTask<IEnumerable<Employee>> GetAllAsync(CancellationToken cancellationToken = default)
+{
+    var command = new CommandDefinition(
+        @"
+            SELECT  [E].[Id],
+                    [E].[FirstName],
+                    [E].[LastName]
+            FROM    [Employee] AS [E];
+        ",
+        commandType: CommandType.Text,
+        cancellationToken: cancellationToken
+    );
+
+    return await Connection.QueryAsync<Employee>(command);
+}
+
+
+    public async Task<IEnumerable<Event>> GetEventsWithNoAttendeesAsync(CancellationToken cancellationToken = default)
+    {
+        var command = new CommandDefinition(
+            @"
+                SELECT  E.[Id],
+                        E.[Description],
+                        E.[StartDateTime],
+                        E.[EndDateTime],
+                        E.[MaximumCapacity]
+                FROM    [Event] AS E
+                LEFT JOIN [Attendees] AS A ON E.Id = A.EventId
+                WHERE   A.Id IS NULL;
+            ",
+            commandType: CommandType.Text,
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.QueryAsync<Event>(command);
+    }
+
 }

@@ -15,10 +15,18 @@ public class DbContext
     /// </summary>
     public EventRepository Events { get; }
 
+
+            /// <summary>
+        /// Gets a repository for accessing attendees.
+        /// </summary>
+        public AttendeeRepository Attendees { get; }
+
     /// <summary>
     /// Initialises a new instance of the <see cref="DbContext"/> class.
     /// </summary>
     /// <param name="connectionFactory">The database connection factory to use for database repositories.</param>
+    
+    
     public DbContext(IDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
@@ -26,6 +34,7 @@ public class DbContext
 
         Employees = new EmployeeRepository(_connectionProvider);
         Events = new EventRepository(_connectionProvider);
+        Attendees = new AttendeeRepository(_connectionProvider); 
     }
 
     private readonly IDbConnectionFactory _connectionFactory;
@@ -35,5 +44,6 @@ public class DbContext
     {
         await Employees.CreateTableIfNotExistsAsync(cancellationToken);
         await Events.CreateTableIfNotExistsAsync(cancellationToken);
+        await Attendees.CreateTableIfNotExistsAsync(cancellationToken);
     }
 }
