@@ -1,4 +1,5 @@
-﻿@model Event;
+﻿@model Website.ViewModels.EventDetailsViewModel
+
 
 @{
     ViewData["Title"] = "Event Details";
@@ -7,7 +8,7 @@
 <div class="d-flex align-items-center mb-2">
     <h4 class="me-auto mb-0">Event Details</h4>
     <a class="btn btn-outline-primary btn-sm m-1" role="button" asp-controller="Event" asp-action="Index">Back</a>
-    <a class="btn btn-warning btn-sm m-1" role="button" asp-controller="Event" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+    <a class="btn btn-warning btn-sm m-1" role="button" asp-controller="Event" asp-action="Edit" asp-route-id="@Model.Event.Id">Edit</a>
     <a class="btn btn-danger btn-sm m-1" role="button" data-bs-toggle="modal" data-bs-target="#confirmDelete">Delete</a>
 </div>
 
@@ -18,7 +19,7 @@
                 <span>Description:</span>
             </div>
             <div class="col-sm-3">
-                <span>@Model.Description</span>
+                <span>@Model.Event.Description</span>
             </div>
         </div>
         <div class="row mb-3 g-2 align-items-center">
@@ -26,7 +27,7 @@
                 <span>Event Start:</span>
             </div>
             <div class="col-sm-3">
-                <span>@Model.StartDateTime.ToString("dd/MM/yyyy HH:mm")</span>
+                <span>@Model.Event.StartDateTime.ToString("dd/MM/yyyy HH:mm")</span>
             </div>
         </div>
         <div class="row mb-3 g-2 align-items-center">
@@ -34,7 +35,7 @@
                 <span>Event Finish:</span>
             </div>
             <div class="col-sm-3">
-                <span>@Model.EndDateTime.ToString("dd/MM/yyyy HH:mm")</span>
+                <span>@Model.Event.EndDateTime.ToString("dd/MM/yyyy HH:mm")</span>
             </div>
         </div>
         <div class="row mb-3 g-2 align-items-center">
@@ -42,8 +43,61 @@
                 <span>Maximum Capacity:</span>
             </div>
             <div class="col-sm-3">
-                <span>@Model.MaximumCapacity</span>
+                <span>@Model.Event.MaximumCapacity</span>
             </div>
+        </div>
+    </div>
+</div>
+
+<form method="post" asp-controller="Event" asp-action="AddAttendee" class="d-flex align-items-center mb-2">
+
+    <h4 class="me-auto mb-0">Attendees & Drinks</h4>
+
+    <input type="hidden" name="eventId" value="@Model.Event.Id" />
+
+    <select name="employeeId" required>
+        <option selected disabled>Choose Attendee</option>
+        @foreach (var employee in Model.Employees)
+        {
+            <option value="@employee.Id">@employee.FirstName @employee.LastName</option>
+        }
+    </select>
+
+    <select name="preferredDrink" required>
+        <option selected disabled>Preferred Drink</option>
+        <option value="Tea">Tea</option>
+        <option value="Coffee">Coffee</option>
+        <option value="Water">Water</option>
+        <option value="Beer">Beer</option>
+        <option value="Wine">Wine</option>
+    </select>
+
+    <button type="submit" class="btn btn-outline-primary btn-sm m-1">RSVP</button>
+</form>
+
+
+<div class="card">
+    <div class="card-body">
+        <div class="row mb-3 g-2 align-items-center">
+    <div class="col-sm-10">
+        @if (!Model.Attendees.Any())
+        {
+            <span>No attendees yet.</span>
+        }
+        else
+        {
+            <ul>
+                @foreach (var attendee in Model.Attendees)
+                {
+                    var employee = Model.Employees.FirstOrDefault(e => e.Id == attendee.EmployeeId);
+                    <li>
+                        @employee?.FirstName @employee?.LastName - @attendee.PreferredDrink
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
         </div>
     </div>
 </div>
@@ -60,7 +114,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
-                <a class="btn btn-danger" role="button" asp-controller="Event" asp-action="Delete" asp-route-id="@Model.Id">Yes</a>
+                <a class="btn btn-danger" role="button" asp-controller="Event" asp-action="Delete" asp-route-id="@Model.Event.Id">Yes</a>
             </div>
         </div>
     </div>

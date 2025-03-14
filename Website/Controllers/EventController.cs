@@ -3,6 +3,8 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using Website.Models;
 using Website.Persistence;
+using Website.ViewModels;
+
 
 namespace Website.Controllers
 {
@@ -34,8 +36,20 @@ namespace Website.Controllers
                 return NotFound();
 
             var @event = await _dbContext.Events.GetByIdAsync(id, cancellationToken);
-            return View(@event);
+            var employees = await _dbContext.Employees.GetAllAsync(cancellationToken);
+            var attendees = await _dbContext.Attendees.GetByEventIdAsync(id, cancellationToken); 
+
+            var viewModel = new EventDetailsViewModel
+            {
+                Event = @event,
+                Employees = employees,
+                Attendees = attendees 
+            };
+
+            return View(viewModel);
         }
+
+
 
         // GET: Event/Create
         public ActionResult Create()
@@ -100,5 +114,41 @@ namespace Website.Controllers
             await _dbContext.Events.DeleteAsync(id, cancellationToken);
             return RedirectToAction(nameof(Index));
         }
+
+
+        // POST: Event/AddAttendee
+       [HttpPost]
+        public async Task<ActionResult> AddAttendee(int eventId, int employeeId, string preferredDrink, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var attendee = new Attendee
+                {
+                    EventId = eventId,
+                    EmployeeId = employeeId,
+                    PreferredDrink = preferredDrink
+                };
+
+                await _dbContext.Attendees.CreateAsync(attendee, cancellationToken);
+
+               
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.SqliteErrorCode == 19)
+            {
+                // Handle duplicate RSVP 
+                Console.WriteLine("This employee has already RSVP'd for this event.");
+            }
+            catch (Exception ex)
+            {
+                // Catch unexpected errors 
+                Console.WriteLine("An error occurred while adding the RSVP.");
+            }
+
+            return RedirectToAction(nameof(Details), new { id = eventId });
+        }
+
+
+    
+
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using Website.Models;
 using Website.Persistence;
+using Website.ViewModels;
 
 namespace Website.Controllers;
 
@@ -20,8 +21,17 @@ public class HomeController : Controller
     {
         var events = await _dbContext.Events.GetAllAsync(includeHistoricEvents: false, cancellationToken);
         var upcomingEvents = events.Where(@event => @event.StartDateTime >= DateTime.Now && @event.StartDateTime <= DateTime.Now.AddDays(7));
+        var topColleagues = await _dbContext.Attendees.GetTop5MostSocialColleaguesAsync(cancellationToken);
+        var eventsWithNoAttendees = await _dbContext.Events.GetEventsWithNoAttendeesAsync(cancellationToken);
 
-        return View(upcomingEvents);
+        var viewModel = new HomeViewModel
+        {
+            Events = upcomingEvents,
+            TopColleagues = topColleagues,
+            EventsWithNoAttendees = eventsWithNoAttendees
+        };
+        
+        return View(viewModel);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
